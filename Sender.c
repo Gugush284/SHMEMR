@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <sys/sem.h>
 #include <string.h>
+#include <assert.h>
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +20,8 @@ int main(int argc, char *argv[])
         	char buff[50];
         	int key;
     	} *array;
+    	
+    	assert (argc == 2);
     	
     	union semun {
       	int val;                  /* value for SETVAL */
@@ -193,7 +196,7 @@ int main(int argc, char *argv[])
 	
 	int w = 1;
 	int i, k, s;
-	FILE *file = fopen ("in", "r");
+	FILE *file = fopen (argv[1], "r");
 	char sym;
 	char *p;
 	array->pack = 0;
