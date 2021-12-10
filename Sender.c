@@ -17,11 +17,9 @@ int main(int argc, char *argv[])
     	{ 
         	int package;
         	int pack;
-        	char buff[50];
+        	char buff[100];
         	int key;
     	} *array;
-    	
-    	assert (argc == 2);
     	
     	union semun {
       	int val;                  /* value for SETVAL */
@@ -29,10 +27,9 @@ int main(int argc, char *argv[])
       	unsigned short *array;    /* array for GETALL, SETALL */
       	struct seminfo *__buf;    /* buffer for IPC_INFO */
 	} arg; 
-    	
-    	struct sembuf sbuf;
-    	sbuf.sem_flg = 0;
-    	struct sembuf * mybuf = &sbuf;  
+    	 
+	struct sembuf sbuf;
+    	struct sembuf * mybuf = &sbuf;     	
     	
     	int shmid;        
     	char path[] = "Sender.c"; 
@@ -40,7 +37,7 @@ int main(int argc, char *argv[])
     	key_t key;     
     	int semid; 
     	
-    	printf ("CONNECTING\n");
+    	//printf ("CONNECTING\n");
     	if((key = ftok(path,0)) < 0)
     	{
         	printf("Can\'t generate key\n");
@@ -62,7 +59,7 @@ int main(int argc, char *argv[])
     	}
     
     	if(
-    	(shmid = shmget(key, sizeof(struct message), 0666|IPC_CREAT|IPC_EXCL))
+    	(shmid = shmget(key, sizeof(struct message), 0666|IPC_CREAT))
     	 < 0)
     	{
         	if(errno != EEXIST)
@@ -70,14 +67,6 @@ int main(int argc, char *argv[])
         	    printf("Can\'t create shared memory\n");
         	    exit(-1);
         	} 
-       		else 
-       	 	{	
-            		if((shmid = shmget(key, sizeof(struct message), 0)) < 0)
-           		{
-               			printf("Can\'t find shared memory\n");
-                		exit(-1);
-            		}
-        	}
     	}
 
     	if(
@@ -88,136 +77,75 @@ int main(int argc, char *argv[])
         exit(-1);
    	}
    	
-   	int f = 0;
-   	int f2 = 0;
-   	int a, c, d, b;
-   	
-   	printf ("TRYING TO ENTER\n");
-   	while (f2 != 1)
+   	//printf ("TRYING TO ENTER\n");
+   	struct sembuf enbuf[3] = 
    	{
-   		if(((a = semctl(semid, 0, GETVAL)) == 0) && ((c = semctl(semid, 3, GETVAL)) != 1))
-   		{
-			d = semctl(semid, 4, GETVAL);
-   			if (d  == -1)
-			{
-				printf ("SEM_ERROR\n\n");
-				exit (0);
-			}
-   			if (d == 0)
-   			{
-   				sbuf.sem_num = 4;
-				sbuf.sem_op = 1;
-				sbuf.sem_flg = 0;
- 				if(semop(semid, mybuf, 1) < 0)
-				{
-					printf("Can\'t wait for condition 9\n");
-					shmctl (shmid, IPC_RMID, NULL);
-					semctl(semid, 1, IPC_RMID); 
-					exit(-1);
-				}
-   			}
-   			
-   			sbuf.sem_num = 0;
-			sbuf.sem_op = 1;
-			sbuf.sem_flg = SEM_UNDO;
- 			if(semop(semid, mybuf, 1) < 0)
-			{
-				printf("Can\'t wait for condition 9\n");
-				shmctl (shmid, IPC_RMID, NULL);
-				semctl(semid, 1, IPC_RMID); 
-				exit(-1);
-			}
-				
-			f = 1;	
-   		}
-   		else if ((a == -1) || (c == -1))
-   			exit (0);
-   		
-   		if((a = semctl(semid, 0, GETVAL)) > 1)
-   		{
-   			sbuf.sem_num = 1;
-			sbuf.sem_op = -1;
-			sbuf.sem_flg = SEM_UNDO;
- 			if(semop(semid, mybuf, 1) < 0)
-			{
-				printf("Can\'t wait for condition 9\n");
-				shmctl (shmid, IPC_RMID, NULL);
-				semctl(semid, 1, IPC_RMID); 
-				exit(-1);
-			}
-			f = 0;		
-   		}
-   		else if (a == -1)
-   			exit (0);
-   		
-   		a = semctl(semid, 1, GETVAL);
-   		if (a == -1)
-   			exit (0);	
-   		if ((f == 1) && (a==1))
-   		{
-   			sbuf.sem_num = 2;
-			sbuf.sem_op = 1;
-			sbuf.sem_flg = SEM_UNDO;
- 			if(semop(semid, mybuf, 1) < 0)
-			{
-				printf("Can\'t wait for condition 9\n");
-				shmctl (shmid, IPC_RMID, NULL);
-				semctl(semid, 1, IPC_RMID); 
-				exit(-1);
-			}
-			
-			printf ("ok\n");
-			f2 = 1;
-   		}
-   	}
-   	
-   	printf ("ENTERED\n");
-   		
-   	while ((a = semctl(semid, 4, GETVAL)) > 1)
-   	{
-   		sbuf.sem_num = 4;
-		sbuf.sem_op = -1;
-		sbuf.sem_flg = 0;
- 		if(semop(semid, mybuf, 1) < 0)
-		{
-			printf("Can\'t wait for condition 9\n");
-			shmctl (shmid, IPC_RMID, NULL);
-			semctl(semid, 1, IPC_RMID); 
-			exit(-1);
-		}	
-   	}
-   	if (a  == -1)
+   		0, 0, 0,
+   		2, 0, 0,
+   		0, +1, SEM_UNDO,
+   	};
+	if (semop(semid, enbuf, 3)<0)
 	{
-		printf ("SEM_ERROR\n\n");
-		exit (0);
-	}				
-   	
-	printf ("WORKING\n");
+		printf("Can\'t wait for condition 1\n");
+		shmctl (shmid, IPC_RMID, NULL);
+		semctl(semid, 1, IPC_RMID); 
+		exit(-1);
+	}
+	
+	//printf ("Making barrier\n");
+	struct sembuf chbuf[3] = 
+   	{
+   		1, -1, 0,
+   		1, +1, 0,
+   		3, +1, SEM_UNDO
+   	};
+	if(semop(semid, chbuf, 3) < 0)
+	{
+		printf("Can\'t wait for condition 2\n");
+		shmctl (shmid, IPC_RMID, NULL);
+		semctl(semid, 1, IPC_RMID); 
+		exit(-1);
+	}
+	
+   	//printf ("ENTERED\n");
+   	//printf ("WORKING\n");
 	
 	int w = 1;
-	int i, k, s;
+	int i, k, s, b;
+	
+	assert (argc == 2);
 	FILE *file = fopen (argv[1], "r");
+	assert (file != NULL);
+	
 	char sym;
 	char *p;
-	array->pack = 0;
-	array->package = 1;
-	array->key = 1;	
+	sbuf.sem_num = 5;
+	sbuf.sem_op = 0;
+	sbuf.sem_flg = 0;
+ 	if(semop(semid, mybuf, 1) < 0)
+	{
+		printf("Can\'t wait for condition 4\n");
+		shmctl (shmid, IPC_RMID, NULL);
+		semctl(semid, 1, IPC_RMID); 
+		exit(-1);
+	}	
 	while (w)
 	{
-		printf ("WORKING. STEP 0\n");
-		//scanf ("%d", &k);
-		sbuf.sem_num = 4;
-		sbuf.sem_op = -1;
-		sbuf.sem_flg = SEM_UNDO;
- 		if(semop(semid, mybuf, 1) < 0)
+		//printf ("WORKING. STEP 0\n");
+		struct sembuf mainbuf[2] = 
+   		{
+   			4, 0, 0,
+   			4, +1, SEM_UNDO
+   		};
+		if (semop(semid, mainbuf, 2)< 0)
 		{
-			printf("Can\'t wait for condition 9\n");
+			printf("Can\'t wait for condition 3\n");
 			shmctl (shmid, IPC_RMID, NULL);
 			semctl(semid, 1, IPC_RMID); 
 			exit(-1);
 		}
 		
-		printf ("WORKING. STEP 1\n");
+		//printf ("WORKING. STEP 1\n");
 		b = semctl(semid, 1, GETVAL);
 		if (b == -1)
 		{
@@ -228,44 +156,58 @@ int main(int argc, char *argv[])
    		if (b == 0)
    		{
    			fclose (file);
-   			printf ("\nConsumer is dead (2)\n\n");
+   			printf ("\nConsumer is dead\n\n");
    			exit (1); 
    		}
 		
-		printf ("WORKING. STEP 2\n");
+		//printf ("WORKING. STEP 2\n");
 		if (array->package)
 		{
-		i = fscanf (file, "%s", array->buff);
+		p = array->buff;
+		i = fscanf (file, "%c", &sym);
 		if (i == -1)
 		{
 			array->pack = 0;
+			//printf ("PROBLEM\n");
 			w = 0;
 			array->package = 0;
-			p = array->buff;
 			array->key = 0;
-			for (s = 0; s<50; s++)
-			{
-				*p = '\0';
-				p++;
-			}	
 		}
 		else
 		{
-			fscanf (file, "%c", &sym);
-			k = strlen(array->buff);
-			p = array->buff + k;
 			*p = sym;
 			p++;
-			*p =  '\0';
+			b = 1;
 			array->pack = 1;
 			array->package = 0;
+			array->key = 1;
+			
+			while (b < 100)
+			{
+				i = fscanf (file, "%c", &sym);
+				if (i == -1)
+				{
+					*p = '\0';
+					//printf ("PROBLEM\n");
+					w = 0;
+					array->package = 0;
+					array->key = 0;
+				}
+				else
+				{
+					*p = sym;
+					array->pack ++;
+					p++;
+				}
+				b++;
+			}
 		}
 		}
 		
 		
-		printf ("WORKING. STEP 3\n");
+		//printf ("WORKING. STEP 3\n");
 		sbuf.sem_num = 4;
-		sbuf.sem_op = 1;
+		sbuf.sem_op = -1;
 		sbuf.sem_flg = SEM_UNDO;
  		if(semop(semid, mybuf, 1) < 0)
 		{
@@ -275,14 +217,13 @@ int main(int argc, char *argv[])
 			exit(-1);
 		}
 		
-		printf ("WORKING. STEP 4\n");
+		//printf ("WORKING. STEP 4\n");
 		if (w == 0)
 			break;	
 	}
 	
  	fclose (file);
- 	printf ("END OF WORK\n");
-   	
+ 	//printf ("END OF WORK\n");
   	return 0;
 }
 
