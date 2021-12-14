@@ -235,10 +235,10 @@ int main(int argc, char *argv[])
 				semctl(semid, 1, IPC_RMID); 
    				exit (0);
    			}
-   			if (b == 0)
+   			if (b == 0 && w != 0)
    			{
    				fclose (file);
-   				printf ("\nConsumer is dead\n\n");
+   				printf ("\nConsumer is dead2\n\n");
    				exit (1); 
    			}
 		}
