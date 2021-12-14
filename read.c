@@ -211,9 +211,9 @@ int main(int argc, char *argv[])
    				printf ("SEM_ERROR\n\n");
    				exit (0);
    			}
-   			if (b == 0)
+   			if (b == 0 && w != 0)
    			{
-   				printf ("\nConsumer is dead\n\n");
+   				printf ("\nConsumer is dead2\n\n");
    				exit (1); 
    			}
 		}
