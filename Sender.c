@@ -10,6 +10,8 @@
 #include <sys/sem.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 int main(int argc, char *argv[])
 {
@@ -115,8 +117,7 @@ int main(int argc, char *argv[])
 	int i, k, s, b;
 	
 	assert (argc == 2);
-	FILE *file = fopen (argv[1], "r");
-	assert (file != NULL);
+	int file = open(argv[1], O_RDONLY);
 	
 	char sym;
 	char *p;
@@ -164,13 +165,11 @@ int main(int argc, char *argv[])
 		b = semctl(semid, 1, GETVAL);
 		if (b == -1)
 		{
-   			fclose (file);
    			printf ("SEM_ERROR\n\n");
    			exit (0);
    		}
    		if (b == 0)
    		{
-   			fclose (file);
    			printf ("\nConsumer is dead\n\n");
    			exit (1); 
    		}
@@ -178,45 +177,21 @@ int main(int argc, char *argv[])
 		//printf ("WORKING. STEP 2\n");
 		if (array->package)
 		{
-		p = array->buff;
-		i = fscanf (file, "%c", &sym);
-		if (i == -1)
-		{
+			i = read (file, array->buff, 99);
+			
 			array->pack = 0;
-			//printf ("PROBLEM\n");
-			w = 0;
-			array->package = 0;
-			array->key = 0;
-		}
-		else
-		{
-			*p = sym;
-			p++;
-			b = 1;
-			array->pack = 1;
 			array->package = 0;
 			array->key = 1;
 			
-			while (b < 100)
+			if (i == -1 || i == 0)
 			{
-				i = fscanf (file, "%c", &sym);
-				if (i == -1)
-				{
-					*p = '\0';
-					//printf ("PROBLEM\n");
-					w = 0;
-					array->package = 0;
-					array->key = 0;
-				}
-				else
-				{
-					*p = sym;
-					array->pack ++;
-					p++;
-				}
-				b++;
+				array->pack = 0;
+				w = 0;
+				array->package = 0;
+				array->key = 0;
 			}
-		}
+			else
+				array->pack = i;
 		}
 		
 		
@@ -229,7 +204,6 @@ int main(int argc, char *argv[])
 			b = semctl(semid, 1, GETVAL);
 			if (b == -1)
 			{
-   				fclose (file);
    				printf ("SEM_ERROR\n\n");
    				shmctl (shmid, IPC_RMID, NULL);
 				semctl(semid, 1, IPC_RMID); 
@@ -237,14 +211,11 @@ int main(int argc, char *argv[])
    			}
    			if (b == 0 && w != 0)
    			{
-   				fclose (file);
    				printf ("\nConsumer is dead2\n\n");
    				exit (1); 
    			}
 		}
 	}
-	
- 	fclose (file);
  	//printf ("END OF WORK\n");
   	return 0;
 }

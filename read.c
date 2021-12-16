@@ -9,6 +9,9 @@
 #include <errno.h>
 #include <sys/sem.h>
 #include <string.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 int main(int argc, char *argv[])
 {
@@ -168,15 +171,12 @@ int main(int argc, char *argv[])
 		}
 		
 		//printf ("WORKING. STEP 3 - %d\n", array->key);
-		if(array->pack)
+		p = array->buff;
+		while(array->pack)
 		{
-			p = array->buff;
-			while (array->pack)
-			{
-				printf ("%c", *(p));
-				p++;
-				array->pack --;
-			}
+			b = write (STDOUT_FILENO, p , array->pack);
+			p = array->buff + b;
+			array->pack = array->pack - b;
 		}
 		if (array->key == 0)
 			w = 0;
