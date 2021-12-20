@@ -117,6 +117,9 @@ int main(int argc, char *argv[])
 	char *p;
 	char sym;
 	int f = 0;
+	array->pack = 0;
+	array->package = 1;
+	array->key = 1;
 	
 	sbuf.sem_num = 5;
 	sbuf.sem_op = -1;
