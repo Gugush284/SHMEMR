@@ -140,6 +140,11 @@ int main(int argc, char *argv[])
 				semctl(semid, 1, IPC_RMID); 
 				exit(-1);
 			}
+			
+			array->pack = 0;
+			array->package = 1;
+			array->key = 1;
+			
 			f++;
 		}
 		else
